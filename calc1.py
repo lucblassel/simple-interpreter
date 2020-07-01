@@ -124,7 +124,7 @@ class Interpreter:
 
 
 def main():
-    while True:        
+    while True:
         text = input('calc> ')
         if not text:
             continue
