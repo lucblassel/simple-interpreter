@@ -31,7 +31,7 @@ class Token:
 
 
 class Interpreter:
-    """Parses and executes input code"""
+    """Tokenizes, parses and executes input code"""
 
     def __init__(self, text):
         self.text = text  # raw code
@@ -52,8 +52,8 @@ class Interpreter:
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
-    def parse_integer(self):
-        """parses potentially multi-digit integer"""
+    def get_integer(self):
+        """tokenize potentially multi-digit integer"""
         num = ''
         while self.current_char is not None and self.current_char.isdigit():
             num += self.current_char
@@ -61,7 +61,7 @@ class Interpreter:
         return int(num)
 
     def get_next_token(self):
-        """gets and parses the next token in the text"""
+        """gets the next token in the text"""
         while self.current_char is not None:
             # check if whitespace and if yes skip
             if self.current_char.isspace():
@@ -70,7 +70,7 @@ class Interpreter:
 
             # check if integer
             if self.current_char.isdigit():
-                return Token(INTEGER, self.parse_integer())
+                return Token(INTEGER, self.get_integer())
 
             # check if operator
             if self.current_char == "+":
@@ -92,16 +92,22 @@ class Interpreter:
 
         return Token(EOF, None)
 
+    def check_type(self, expected_type):
+        """checks if token is of expected type"""
+        if self.current_token.is_type(expected_type):
+            return True
+        return False
+
     def eat(self, expected_type):
         """check if token matches expected type and goes to next token if yes"""
-        if self.current_token.is_type(expected_type):
+        if self.check_type(expected_type):
             self.current_token = self.get_next_token()
             return
         raise Exception(
             f"parsing error: Unexpected Token, {self.current_token}")
 
     def operate(self, left_val, right_val, operator):
-        """executes tokenized operation"""
+        """executes parsed operation"""
         if operator.is_type(PLUS):
             return left_val + right_val
         if operator.is_type(MINUS):
@@ -112,15 +118,17 @@ class Interpreter:
             return left_val / right_val
 
     def expr(self):
-        """tokenizes and executes expression"""
+        """parses and executes expression"""
         self.current_token = self.get_next_token()
-        left = self.current_token
+        result = self.current_token.value
         self.eat(INTEGER)
-        operator = self.current_token
-        self.eat(OPERATOR)
-        right = self.current_token
-        self.eat(INTEGER)
-        return self.operate(left.value, right.value, operator)
+        while not self.check_type(EOF):
+            operator = self.current_token
+            self.eat(OPERATOR)
+            right = self.current_token
+            self.eat(INTEGER)
+            result = self.operate(result, right.value, operator)
+        return result
 
 
 def main():
